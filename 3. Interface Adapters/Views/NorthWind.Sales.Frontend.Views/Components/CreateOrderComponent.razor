@@ -189,8 +189,11 @@
                                             <div class="d-inline-flex flex-column align-items-center">
                                                 <InputNumber class="@("form-control form-control-sm text-center fw-bold " + (item.Quantity > item.AvailableStock || item.Quantity < 1 ? "is-invalid border-danger text-danger" : ""))"
                                                              style="width: 100px;"
+                                                             step="1"
                                                              min="1"
                                                              max="@item.AvailableStock"
+                                                             inputmode="numeric"
+                                                             data-filter-mode="DigitsOnly"
                                                              @bind-Value="item.Quantity" />
                                                 @if (item.Quantity > item.AvailableStock)
                                                 {
@@ -295,7 +298,11 @@
                             <input type="text"
                                    class="form-control search-input"
                                    placeholder="@CustomerSearchPlaceholder"
+                                   maxlength="40"
                                    value="@Order.SearchText"
+                                   data-filter-mode="customer-search"
+                                   data-filter="@Order.CustomerFilter"
+                                   @ref="CustomerSearchInput"
                                    @oninput="OnCustomerSearchInput"
                                    @onkeydown="SearchOnEnter" />
                         </div>
@@ -442,7 +449,11 @@
                             <input type="text"
                                    class="form-control search-input"
                                    placeholder="Buscar por nombre o ID..."
+                                   maxlength="40"
                                    value="@Order.SearchText"
+                                   data-filter-mode="product-search"
+                                   data-filter="@Order.ProductFilter"
+                                   @ref="ProductSearchInput"
                                    @oninput="OnProductSearchInput"
                                    @onkeydown="SearchOnEnter" />
                         </div>

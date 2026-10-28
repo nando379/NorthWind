@@ -20,6 +20,8 @@ public partial class CreateOrderComponent : IDisposable
         amount.ToString("N2", EcCulture);
 
     private CancellationTokenSource? _searchCts;
+    private ElementReference CustomerSearchInput;
+    private ElementReference ProductSearchInput;
 
     [Parameter]
     public CreateOrderViewModel Order { get; set; }
@@ -50,7 +52,9 @@ public partial class CreateOrderComponent : IDisposable
 
     async Task OnCustomerSearchInput(ChangeEventArgs e)
     {
-        Order.SearchText = FilterCustomerSearchText(e.Value?.ToString() ?? string.Empty, Order.CustomerFilter);
+        var rawInput = e.Value?.ToString() ?? string.Empty;
+        Order.SearchText = FilterCustomerSearchText(rawInput, Order.CustomerFilter);
+        await CorrectVisibleInputAsync(CustomerSearchInput, rawInput, Order.SearchText);
         _searchCts?.Cancel();
         _searchCts = new CancellationTokenSource();
         var token = _searchCts.Token;
@@ -70,6 +74,7 @@ public partial class CreateOrderComponent : IDisposable
     {
         Order.CustomerFilter = e.Value?.ToString() ?? "Todas";
         Order.SearchText = FilterCustomerSearchText(Order.SearchText, Order.CustomerFilter);
+        await SetVisibleInputAsync(CustomerSearchInput, Order.SearchText);
         await SearchNow();
     }
 
@@ -91,7 +96,9 @@ public partial class CreateOrderComponent : IDisposable
 
     async Task OnProductSearchInput(ChangeEventArgs e)
     {
-        Order.SearchText = FilterProductSearchText(e.Value?.ToString() ?? string.Empty, Order.ProductFilter);
+        var rawInput = e.Value?.ToString() ?? string.Empty;
+        Order.SearchText = FilterProductSearchText(rawInput, Order.ProductFilter);
+        await CorrectVisibleInputAsync(ProductSearchInput, rawInput, Order.SearchText);
         _searchCts?.Cancel();
         _searchCts = new CancellationTokenSource();
         var token = _searchCts.Token;
@@ -111,8 +118,20 @@ public partial class CreateOrderComponent : IDisposable
     {
         Order.ProductFilter = e.Value?.ToString() ?? "Todas";
         Order.SearchText = FilterProductSearchText(Order.SearchText, Order.ProductFilter);
+        await SetVisibleInputAsync(ProductSearchInput, Order.SearchText);
         await SearchNow();
     }
+
+    private async Task CorrectVisibleInputAsync(ElementReference input, string rawValue, string filteredValue)
+    {
+        if (!string.Equals(rawValue, filteredValue, StringComparison.Ordinal))
+        {
+            await SetVisibleInputAsync(input, filteredValue);
+        }
+    }
+
+    private Task SetVisibleInputAsync(ElementReference input, string value) =>
+        JavaScript.InvokeVoidAsync("northWindInputFilter.setValue", input, value).AsTask();
 
     private static string FilterProductSearchText(string value, string filter)
     {

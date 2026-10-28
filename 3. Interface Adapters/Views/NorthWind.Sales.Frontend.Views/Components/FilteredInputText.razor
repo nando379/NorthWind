@@ -1,6 +1,9 @@
 @inherits InputBase<string>
+@inject IJSRuntime JavaScript
 
 <input @attributes="AdditionalAttributes"
+       @ref="_input"
+       data-filter-mode="@FilterMode"
        type="text"
        name="@NameAttributeValue"
        class="@CssClass"
@@ -15,13 +18,21 @@
     [Parameter]
     public InputFilterMode FilterMode { get; set; } = InputFilterMode.LettersDigitsAndSpaces;
 
-    private void HandleInput(ChangeEventArgs args)
+    private ElementReference _input;
+
+    private async Task HandleInput(ChangeEventArgs args)
     {
         string rawValue = args.Value?.ToString() ?? string.Empty;
-        CurrentValueAsString = new string(rawValue
+        string filteredValue = new(rawValue
             .Where(IsAllowedCharacter)
             .Take(Math.Max(0, MaxLength))
             .ToArray());
+
+        CurrentValueAsString = filteredValue;
+        if (!string.Equals(rawValue, filteredValue, StringComparison.Ordinal))
+        {
+            await JavaScript.InvokeVoidAsync("northWindInputFilter.setValue", _input, filteredValue);
+        }
     }
 
     private bool IsAllowedCharacter(char character) => FilterMode switch
