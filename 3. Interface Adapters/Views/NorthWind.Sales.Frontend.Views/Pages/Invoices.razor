@@ -40,7 +40,11 @@
                     <input type="text"
                            class="form-control search-input"
                            placeholder="Buscar por número, cliente o ciudad..."
+                           maxlength="40"
                            value="@SearchText"
+                           data-filter-mode="invoice-search"
+                           data-filter="@FilterField"
+                           @ref="InvoiceSearchInput"
                            @oninput="OnInvoiceSearchInput"
                            @onkeydown="SearchOnEnter" />
                 </div>
@@ -407,6 +411,7 @@
 
     private string SearchText = string.Empty;
     private string FilterField = "Todas";
+    private ElementReference InvoiceSearchInput;
     private string ErrorMessage = string.Empty;
     private int Page = 1;
     private SearchPageDto<InvoiceSearchItemDto> Results = new([], 1, PageSize, 0);
@@ -419,7 +424,9 @@
 
     private async Task OnInvoiceSearchInput(ChangeEventArgs e)
     {
-        SearchText = e.Value?.ToString() ?? string.Empty;
+        var rawValue = e.Value?.ToString() ?? string.Empty;
+        SearchText = FilterInvoiceSearchText(rawValue, FilterField);
+        await CorrectInvoiceInputAsync(rawValue);
         _searchCts?.Cancel();
         _searchCts = new CancellationTokenSource();
         var token = _searchCts.Token;
@@ -439,7 +446,34 @@
     private async Task OnFilterChanged(ChangeEventArgs e)
     {
         FilterField = e.Value?.ToString() ?? "Todas";
+        SearchText = FilterInvoiceSearchText(SearchText, FilterField);
+        await JavaScript.InvokeVoidAsync("northWindInputFilter.setValue", InvoiceSearchInput, SearchText);
         await SearchNow();
+    }
+
+    private async Task CorrectInvoiceInputAsync(string rawValue)
+    {
+        if (!string.Equals(rawValue, SearchText, StringComparison.Ordinal))
+        {
+            await JavaScript.InvokeVoidAsync("northWindInputFilter.setValue", InvoiceSearchInput, SearchText);
+        }
+    }
+
+    private static string FilterInvoiceSearchText(string value, string filter)
+    {
+        Func<char, bool> isAllowed = filter switch
+        {
+            "Número de factura" or "Fecha" => char.IsDigit,
+            "Ciudad" => char.IsLetter,
+            "Todas" or "Cliente / nombre" => char.IsLetterOrDigit,
+            _ => char.IsLetterOrDigit
+        };
+
+        return new string(value
+            .Where(character => isAllowed(character) ||
+                                (character == ' ' && (filter is "Todas" or "Cliente / nombre" or "Ciudad")))
+            .Take(40)
+            .ToArray());
     }
 
     private async Task SearchNow()

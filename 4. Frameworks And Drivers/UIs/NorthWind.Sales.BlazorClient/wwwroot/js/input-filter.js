@@ -45,6 +45,15 @@ document.addEventListener("beforeinput", event => {
             }
             return isAlphanumeric || character === " ";
         }
+        if (mode === "invoice-search") {
+            if (filter === "Número de factura" || filter === "Fecha") {
+                return isDigit;
+            }
+            if (filter === "Ciudad") {
+                return isLetter || character === " ";
+            }
+            return isAlphanumeric || character === " ";
+        }
         return true;
     };
 
