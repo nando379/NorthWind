@@ -100,28 +100,28 @@
                         <label class="form-label fw-semibold text-secondary small mb-1">
                             Dirección de envío <span class="text-danger">*</span>
                         </label>
-                        <InputText class="form-control form-control-modern" placeholder="Ej. Av Cevallos 1234" maxlength="60" @bind-Value="Order.ShipAddress" @bind-Value:event="oninput" />
+                        <FilteredInputText class="form-control form-control-modern" placeholder="Ej. Av Cevallos 1234" MaxLength="60" FilterMode="InputFilterMode.Address" @bind-Value="Order.ShipAddress" />
                         <ValidationMessage For="() => Order.ShipAddress" class="text-danger small mt-1" />
                     </div>
                     <div class="col-md-3">
                         <label class="form-label fw-semibold text-secondary small mb-1">
                             Ciudad <span class="text-danger">*</span>
                         </label>
-                        <InputText class="form-control form-control-modern" placeholder="Ej. Ambato" maxlength="15" @bind-Value="Order.ShipCity" @bind-Value:event="oninput" />
+                        <FilteredInputText class="form-control form-control-modern" placeholder="Ej. Ambato" MaxLength="15" FilterMode="InputFilterMode.LettersAndSpaces" @bind-Value="Order.ShipCity" />
                         <ValidationMessage For="() => Order.ShipCity" class="text-danger small mt-1" />
                     </div>
                     <div class="col-md-3">
                         <label class="form-label fw-semibold text-secondary small mb-1">
                             País <span class="text-danger">*</span>
                         </label>
-                        <InputText class="form-control form-control-modern" placeholder="Ej. Ecuador" maxlength="15" @bind-Value="Order.ShipCountry" @bind-Value:event="oninput" />
+                        <FilteredInputText class="form-control form-control-modern" placeholder="Ej. Ecuador" MaxLength="15" FilterMode="InputFilterMode.LettersAndSpaces" @bind-Value="Order.ShipCountry" />
                         <ValidationMessage For="() => Order.ShipCountry" class="text-danger small mt-1" />
                     </div>
                     <div class="col-md-2">
                         <label class="form-label fw-semibold text-secondary small mb-1">
                             Código postal
                         </label>
-                        <InputText class="form-control form-control-modern" placeholder="Ej. 180101" maxlength="10" @bind-Value="Order.ShipPostalCode" @bind-Value:event="oninput" />
+                        <FilteredInputText class="form-control form-control-modern" placeholder="Ej. 180101" MaxLength="10" FilterMode="InputFilterMode.LettersDigitsAndSpaces" @bind-Value="Order.ShipPostalCode" />
                         <ValidationMessage For="() => Order.ShipPostalCode" class="text-danger small mt-1" />
                     </div>
                 </div>
@@ -808,13 +808,17 @@
     }
 
     @@media print {
-        html, body, #app {
+        html:has(#created-invoice),
+        body:has(#created-invoice),
+        #app:has(#created-invoice),
+        #app *:has(#created-invoice) {
             width: 100% !important;
             height: 0 !important;
             min-height: 0 !important;
             margin: 0 !important;
             padding: 0 !important;
-            overflow: hidden !important;
+            overflow: visible !important;
+            transform: none !important;
         }
 
         body * { visibility: hidden !important; }
@@ -851,10 +855,10 @@
             z-index: 999999 !important;
             box-sizing: border-box !important;
             width: 100% !important;
-            max-height: 281mm !important;
+            max-height: none !important;
             margin: 0 !important;
             padding: 4mm !important;
-            overflow: hidden !important;
+            overflow: visible !important;
             border: 0 !important;
             border-radius: 0 !important;
             background: #fff !important;

@@ -1,0 +1,45 @@
+@inherits InputBase<string>
+
+<input @attributes="AdditionalAttributes"
+       type="text"
+       name="@NameAttributeValue"
+       class="@CssClass"
+       maxlength="@MaxLength"
+       value="@CurrentValueAsString"
+       @oninput="HandleInput" />
+
+@code {
+    [Parameter]
+    public int MaxLength { get; set; } = 60;
+
+    [Parameter]
+    public InputFilterMode FilterMode { get; set; } = InputFilterMode.LettersDigitsAndSpaces;
+
+    private void HandleInput(ChangeEventArgs args)
+    {
+        string rawValue = args.Value?.ToString() ?? string.Empty;
+        CurrentValueAsString = new string(rawValue
+            .Where(IsAllowedCharacter)
+            .Take(Math.Max(0, MaxLength))
+            .ToArray());
+    }
+
+    private bool IsAllowedCharacter(char character) => FilterMode switch
+    {
+        InputFilterMode.Address => char.IsLetter(character) || char.IsDigit(character) || character == ' ',
+        InputFilterMode.LettersAndSpaces => char.IsLetter(character) || character == ' ',
+        InputFilterMode.LettersDigitsAndSpaces => char.IsLetterOrDigit(character) || character == ' ',
+        InputFilterMode.DigitsOnly => char.IsDigit(character),
+        _ => false
+    };
+
+    protected override bool TryParseValueFromString(
+        string? value,
+        out string result,
+        out string? validationErrorMessage)
+    {
+        result = value ?? string.Empty;
+        validationErrorMessage = null;
+        return true;
+    }
+}

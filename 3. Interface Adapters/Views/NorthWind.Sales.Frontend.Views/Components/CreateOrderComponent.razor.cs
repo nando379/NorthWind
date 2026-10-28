@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text.RegularExpressions;
 
 namespace NorthWind.Sales.Frontend.Views.Components;
 
@@ -51,17 +50,7 @@ public partial class CreateOrderComponent : IDisposable
 
     async Task OnCustomerSearchInput(ChangeEventArgs e)
     {
-        var rawInput = e.Value?.ToString() ?? string.Empty;
-        if (Order.CustomerFilter == "Nombre")
-        {
-            rawInput = Regex.Replace(rawInput, @"[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]", "");
-        }
-        else if (Order.CustomerFilter == "ID")
-        {
-            rawInput = Regex.Replace(rawInput, @"[^a-zA-Z0-9]", "");
-        }
-
-        Order.SearchText = rawInput;
+        Order.SearchText = FilterCustomerSearchText(e.Value?.ToString() ?? string.Empty, Order.CustomerFilter);
         _searchCts?.Cancel();
         _searchCts = new CancellationTokenSource();
         var token = _searchCts.Token;
@@ -80,20 +69,29 @@ public partial class CreateOrderComponent : IDisposable
     async Task OnCustomerFilterChanged(ChangeEventArgs e)
     {
         Order.CustomerFilter = e.Value?.ToString() ?? "Todas";
-        if (Order.CustomerFilter == "Nombre" && !string.IsNullOrEmpty(Order.SearchText))
-        {
-            Order.SearchText = Regex.Replace(Order.SearchText, @"[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]", "");
-        }
-        else if (Order.CustomerFilter == "ID" && !string.IsNullOrEmpty(Order.SearchText))
-        {
-            Order.SearchText = Regex.Replace(Order.SearchText, @"[^a-zA-Z0-9]", "");
-        }
+        Order.SearchText = FilterCustomerSearchText(Order.SearchText, Order.CustomerFilter);
         await SearchNow();
+    }
+
+    private static string FilterCustomerSearchText(string value, string filter)
+    {
+        Func<char, bool> allowed = filter switch
+        {
+            "ID" => char.IsLetterOrDigit,
+            "Nombre" or "Todas" => char.IsLetterOrDigit,
+            _ => char.IsLetterOrDigit
+        };
+
+        return new string(value
+            .Where(character => allowed(character) ||
+                                ((filter is "Nombre" or "Todas") && character == ' '))
+            .Take(40)
+            .ToArray());
     }
 
     async Task OnProductSearchInput(ChangeEventArgs e)
     {
-        Order.SearchText = e.Value?.ToString() ?? string.Empty;
+        Order.SearchText = FilterProductSearchText(e.Value?.ToString() ?? string.Empty, Order.ProductFilter);
         _searchCts?.Cancel();
         _searchCts = new CancellationTokenSource();
         var token = _searchCts.Token;
@@ -112,7 +110,24 @@ public partial class CreateOrderComponent : IDisposable
     async Task OnProductFilterChanged(ChangeEventArgs e)
     {
         Order.ProductFilter = e.Value?.ToString() ?? "Todas";
+        Order.SearchText = FilterProductSearchText(Order.SearchText, Order.ProductFilter);
         await SearchNow();
+    }
+
+    private static string FilterProductSearchText(string value, string filter)
+    {
+        Func<char, bool> allowed = filter switch
+        {
+            "ID" or "Stock" or "Precio" => char.IsDigit,
+            "Nombre" or "Todas" => char.IsLetterOrDigit,
+            _ => char.IsLetterOrDigit
+        };
+
+        return new string(value
+            .Where(character => allowed(character) ||
+                                ((filter is "Nombre" or "Todas") && character == ' '))
+            .Take(40)
+            .ToArray());
     }
 
     async Task SearchNow()

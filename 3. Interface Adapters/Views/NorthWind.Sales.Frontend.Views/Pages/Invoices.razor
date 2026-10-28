@@ -323,13 +323,17 @@
     }
 
     @@media print {
-        html, body, #app {
+        html:has(#viewed-invoice),
+        body:has(#viewed-invoice),
+        #app:has(#viewed-invoice),
+        #app *:has(#viewed-invoice) {
             width: 100% !important;
             height: 0 !important;
             min-height: 0 !important;
             margin: 0 !important;
             padding: 0 !important;
-            overflow: hidden !important;
+            overflow: visible !important;
+            transform: none !important;
         }
 
         body * { visibility: hidden !important; }
@@ -366,10 +370,10 @@
             z-index: 999999 !important;
             box-sizing: border-box !important;
             width: 100% !important;
-            max-height: 281mm !important;
+            max-height: none !important;
             margin: 0 !important;
             padding: 4mm !important;
-            overflow: hidden !important;
+            overflow: visible !important;
             border: 0 !important;
             border-radius: 0 !important;
             background: #fff !important;
