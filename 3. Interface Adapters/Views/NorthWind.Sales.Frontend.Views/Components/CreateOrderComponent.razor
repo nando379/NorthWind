@@ -1,0 +1,810 @@
+@using System.Globalization
+@inject IJSRuntime JavaScript
+
+<div class="create-order-container">
+    @* Page Header *@
+    <div class="page-header d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <span class="badge bg-primary-subtle text-primary mb-1 px-3 py-2 rounded-pill fw-semibold">
+                Módulo de Facturación
+            </span>
+            <h2 class="page-title mb-0 fw-bold text-dark">Nueva Orden de Venta</h2>
+            <p class="text-muted small mb-0">Complete la información del cliente, destino de entrega y productos para generar la orden</p>
+        </div>
+        <div>
+            <a href="invoices" class="btn btn-outline-secondary btn-sm shadow-sm">
+                <i class="bi bi-clock-history me-1"></i> Consultar Facturas
+            </a>
+        </div>
+    </div>
+
+    @* Alert messages *@
+    @if (!string.IsNullOrWhiteSpace(Order.WarningMessage))
+    {
+        <div class="alert alert-warning border-warning d-flex align-items-center shadow-sm mb-4" role="alert">
+            <span class="fs-4 me-3">⚠️</span>
+            <div>
+                <strong>Aviso de Cartera:</strong> @Order.WarningMessage
+            </div>
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(Order.InformationMessage) && !Order.IsCustomerModalOpen && !Order.IsProductModalOpen)
+    {
+        <div class="alert @(Order.InformationMessage.Contains("exitosamente") || Order.InformationMessage.Contains("guardó") ? "alert-success border-success" : "alert-danger border-danger") shadow-sm mb-4 d-flex align-items-center justify-content-between" role="alert">
+            <div class="d-flex align-items-center">
+                <span class="fs-4 me-2">@(Order.InformationMessage.Contains("exitosamente") || Order.InformationMessage.Contains("guardó") ? "✅" : "⚠️")</span>
+                <span>@Order.InformationMessage</span>
+            </div>
+            <button type="button" class="btn-close" aria-label="Cerrar" @onclick="() => Order.InformationMessage = string.Empty"></button>
+        </div>
+    }
+
+    <EditForm Model="Order" OnValidSubmit="Order.Send">
+        <ModelValidator Validator="Order.Validator" @ref="Order.ModelValidatorComponentReference" />
+        <ValidationSummary class="alert alert-danger shadow-sm mb-4" />
+
+        @* Customer Card *@
+        <div class="card shadow-sm border-0 mb-4 rounded-3 overflow-hidden">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="header-icon bg-primary text-white rounded-circle d-inline-flex justify-content-center align-items-center">
+                        👤
+                    </span>
+                    <h5 class="mb-0 fw-bold text-dark">Información del Cliente</h5>
+                </div>
+                <button type="button" class="btn btn-outline-primary btn-sm px-3 fw-semibold shadow-sm" @onclick="OpenCustomerSearch">
+                    🔍 @(string.IsNullOrEmpty(Order.CustomerId) ? "Buscar cliente" : "Cambiar cliente")
+                </button>
+            </div>
+            <div class="card-body p-4">
+                <div class="selected-customer-box p-3 rounded-3 mb-4 @(string.IsNullOrEmpty(Order.CustomerId) ? "bg-light border" : (Order.CustomerBalance > 0 ? "border border-danger bg-danger-subtle" : "border border-success-subtle bg-success-subtle"))">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                        <div class="d-flex align-items-center gap-3">
+                            @if (string.IsNullOrEmpty(Order.CustomerId))
+                            {
+                                <span class="badge bg-secondary px-3 py-2 fs-6">Sin seleccionar</span>
+                                <span class="text-secondary fw-medium">Ningún cliente seleccionado para esta orden</span>
+                            }
+                            else
+                            {
+                                <span class="customer-badge">@Order.CustomerId</span>
+                                <div>
+                                    <div class="fw-bold fs-5 text-dark">@Order.CustomerName</div>
+                                    <small class="text-muted">Identificador: @Order.CustomerId</small>
+                                </div>
+                            }
+                        </div>
+                        @if (!string.IsNullOrEmpty(Order.CustomerId))
+                        {
+                            <div>
+                                @if (Order.CustomerBalance > 0)
+                                {
+                                    <span class="badge bg-danger px-3 py-2 fs-6">
+                                        ⚠️ Deuda pendiente: @FormatCurrency(Order.CustomerBalance)
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success px-3 py-2 fs-6">
+                                        ✓ Al día ($0.00)
+                                    </span>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-secondary small mb-1">
+                            Dirección de envío <span class="text-danger">*</span>
+                        </label>
+                        <InputText class="form-control form-control-modern" placeholder="Ej. Av. Cevallos 12-34" @bind-Value="Order.ShipAddress" />
+                        <ValidationMessage For="() => Order.ShipAddress" class="text-danger small mt-1" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold text-secondary small mb-1">
+                            Ciudad <span class="text-danger">*</span>
+                        </label>
+                        <InputText class="form-control form-control-modern" placeholder="Ej. Ambato" @bind-Value="Order.ShipCity" />
+                        <ValidationMessage For="() => Order.ShipCity" class="text-danger small mt-1" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold text-secondary small mb-1">
+                            País <span class="text-danger">*</span>
+                        </label>
+                        <InputText class="form-control form-control-modern" placeholder="Ej. Ecuador" @bind-Value="Order.ShipCountry" />
+                        <ValidationMessage For="() => Order.ShipCountry" class="text-danger small mt-1" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold text-secondary small mb-1">
+                            Código postal
+                        </label>
+                        <InputText class="form-control form-control-modern" placeholder="Ej. 180101" @bind-Value="Order.ShipPostalCode" />
+                        <ValidationMessage For="() => Order.ShipPostalCode" class="text-danger small mt-1" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* Order Details Card *@
+        <div class="card shadow-sm border-0 mb-4 rounded-3 overflow-hidden">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="header-icon bg-success text-white rounded-circle d-inline-flex justify-content-center align-items-center">
+                        📦
+                    </span>
+                    <h5 class="mb-0 fw-bold text-dark">Detalle de la orden</h5>
+                </div>
+                <button type="button" class="btn btn-outline-primary btn-sm px-3 fw-semibold shadow-sm" @onclick="OpenProductSearch">
+                    ➕ Agregar producto
+                </button>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 modern-table">
+                        <thead class="table-light text-secondary small text-uppercase">
+                            <tr>
+                                <th style="width: 40%;">Producto</th>
+                                <th class="text-end" style="width: 15%;">Precio unitario</th>
+                                <th class="text-center" style="width: 20%;">Cantidad</th>
+                                <th class="text-end" style="width: 15%;">Subtotal</th>
+                                <th class="text-center" style="width: 10%;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Order.OrderDetails.Count == 0)
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center py-5 text-muted">
+                                        <div class="py-3">
+                                            <span class="display-6 d-block mb-2">🛒</span>
+                                            <p class="mb-2 fw-medium">No hay productos agregados en la orden</p>
+                                            <button type="button" class="btn btn-sm btn-primary" @onclick="OpenProductSearch">
+                                                Agregar primer producto
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var item in Order.OrderDetails)
+                                {
+                                    <tr @key="item" class="@(item.Quantity > item.AvailableStock || item.Quantity < 1 ? "table-danger" : "")">
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="product-id-badge">#@item.ProductId</span>
+                                                <span class="fw-semibold text-dark">@item.ProductName</span>
+                                            </div>
+                                            <small class="text-muted d-block mt-1">
+                                                Existencias disponibles: <span class="badge bg-light text-dark border">@item.AvailableStock unidades</span>
+                                            </small>
+                                        </td>
+                                        <td class="text-end fw-medium">
+                                            @FormatCurrency(item.UnitPrice)
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="d-inline-flex flex-column align-items-center">
+                                                <InputNumber class="@("form-control form-control-sm text-center fw-bold " + (item.Quantity > item.AvailableStock || item.Quantity < 1 ? "is-invalid border-danger text-danger" : ""))"
+                                                             style="width: 100px;"
+                                                             min="1"
+                                                             max="@item.AvailableStock"
+                                                             @bind-Value="item.Quantity" />
+                                                @if (item.Quantity > item.AvailableStock)
+                                                {
+                                                    <small class="text-danger fw-bold mt-1">Supera stock (@item.AvailableStock)</small>
+                                                }
+                                                else if (item.Quantity < 1)
+                                                {
+                                                    <small class="text-danger fw-bold mt-1">Mínimo 1</small>
+                                                }
+                                            </div>
+                                        </td>
+                                        <td class="text-end fw-bold text-dark">
+                                            @FormatCurrency(item.UnitPrice * item.Quantity)
+                                        </td>
+                                        <td class="text-center">
+                                            <button type="button" class="btn btn-sm btn-outline-danger px-2 py-1 shadow-sm"
+                                                    title="Eliminar producto"
+                                                    @onclick="() => Order.RemoveOrderDetailItem(item)">
+                                                🗑️ Eliminar
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                @* Financial Totals Area *@
+                <div class="bg-light p-4 border-top">
+                    <div class="row align-items-center">
+                        <div class="col-md-6 text-muted small">
+                            <p class="mb-1"><strong>Condiciones de venta:</strong> Factura comercial de contado.</p>
+                            <p class="mb-0">Los precios incluyen impuestos locales según normativa vigente.</p>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="totals-panel ms-auto p-3 bg-white rounded-3 shadow-sm border" style="max-width: 320px;">
+                                <div class="d-flex justify-content-between mb-2 text-secondary">
+                                    <span>Subtotal:</span>
+                                    <span class="fw-medium">@FormatCurrency(Order.Subtotal)</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2 text-secondary">
+                                    <span>IVA (@(Order.TaxRate.ToString("P0", CultureInfo.InvariantCulture))):</span>
+                                    <span class="fw-medium">@FormatCurrency(Order.Tax)</span>
+                                </div>
+                                <hr class="my-2" />
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="fw-bold fs-5 text-dark">Total:</span>
+                                    <span class="fw-bolder fs-4 text-primary">@FormatCurrency(Order.Total)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* Save Order Button *@
+        <div class="d-flex justify-content-end mb-5">
+            <button type="submit"
+                    class="btn btn-success btn-lg px-5 py-3 fw-bold shadow save-order-btn d-inline-flex align-items-center gap-2"
+                    disabled="@(Order.IsSaving || Order.CustomerBalance > 0 || string.IsNullOrEmpty(Order.CustomerId) || Order.OrderDetails.Count == 0)">
+                @if (Order.IsSaving)
+                {
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span>Guardando orden...</span>
+                }
+                else
+                {
+                    <span>💾 Guardar orden</span>
+                }
+            </button>
+        </div>
+    </EditForm>
+</div>
+
+@* ========================================================================= *@
+@* MODAL: BÚSQUEDA DE CLIENTES (Matches Screenshot 3)                         *@
+@* ========================================================================= *@
+@if (Order.IsCustomerModalOpen)
+{
+    <div class="modal d-block modal-backdrop-custom" tabindex="-1" role="dialog" aria-modal="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+            <div class="modal-content shadow-lg border-0 rounded-3 overflow-hidden">
+                @* Blue Header *@
+                <div class="modal-header modal-header-blue text-white px-4 py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="modal-title fw-bold mb-0">Búsqueda de Clientes</h5>
+                    <button type="button" class="btn-close-white" aria-label="Cerrar" @onclick="Order.CloseModal">✕</button>
+                </div>
+
+                <div class="modal-body p-4">
+                    @* Search & Filter Controls *@
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-4 col-sm-5">
+                            <select class="form-select filter-dropdown" value="@Order.CustomerFilter" @onchange="OnCustomerFilterChanged">
+                                <option value="Todas">Todas</option>
+                                <option value="ID">ID</option>
+                                <option value="Nombre">Nombre</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 col-sm-5">
+                            <input type="text"
+                                   class="form-control search-input"
+                                   placeholder="@CustomerSearchPlaceholder"
+                                   value="@Order.SearchText"
+                                   @oninput="OnCustomerSearchInput"
+                                   @onkeydown="SearchOnEnter" />
+                        </div>
+                        <div class="col-md-2 col-sm-2 d-grid">
+                            <button type="button" class="btn btn-primary btn-search-blue fw-medium" @onclick="SearchNow">
+                                Buscar
+                            </button>
+                        </div>
+                    </div>
+
+                    @* Customer Table *@
+                    <div class="table-responsive">
+                        <table class="table align-middle search-result-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th style="width: 15%;"></th>
+                                    <th style="width: 45%;">Nombre del Cliente</th>
+                                    <th class="text-end" style="width: 20%;">Saldo Actual</th>
+                                    <th class="text-center" style="width: 20%;">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Order.Customers.Count == 0)
+                                {
+                                    <tr>
+                                        <td colspan="4" class="text-center py-4 text-muted">
+                                            No se encontraron clientes con el criterio especificado.
+                                        </td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    @foreach (var customer in Order.Customers)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <span class="customer-badge">@customer.Id</span>
+                                            </td>
+                                            <td class="fw-semibold text-dark">
+                                                @customer.Name
+                                            </td>
+                                            <td class="text-end">
+                                                @if (customer.CurrentBalance > 0)
+                                                {
+                                                    <div class="text-danger fw-bold">@FormatDecimal(customer.CurrentBalance)</div>
+                                                    <div class="badge-deuda mt-1">
+                                                        <span class="me-1">⚠️</span> Deuda
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-secondary">@FormatDecimal(customer.CurrentBalance)</span>
+                                                }
+                                            </td>
+                                            <td class="text-center">
+                                                @if (customer.CurrentBalance > 0)
+                                                {
+                                                    <button type="button" class="btn btn-sm btn-select-warning fw-semibold px-3"
+                                                            @onclick="() => SelectCustomer(customer)">
+                                                        Seleccionar
+                                                    </button>
+                                                }
+                                                else
+                                                {
+                                                    <button type="button" class="btn btn-sm btn-select-success fw-semibold px-3"
+                                                            @onclick="() => SelectCustomer(customer)">
+                                                        Seleccionar
+                                                    </button>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @* Pagination Row *@
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 pt-3 border-top">
+                        <div class="text-muted small">
+                            Mostrando <strong>@Order.Customers.Count</strong> de <strong>@Order.TotalCount</strong> clientes (Pág. @Order.Page de @Order.TotalPages)
+                        </div>
+                        <div class="pagination-buttons d-flex align-items-center gap-1">
+                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                    disabled="@(Order.Page <= 1)"
+                                    @onclick="() => ChangePage(-1)">
+                                Anterior
+                            </button>
+                            @for (int i = 1; i <= Order.TotalPages; i++)
+                            {
+                                int pageNum = i;
+                                <button type="button" class="btn btn-sm @(pageNum == Order.Page ? "btn-primary active fw-bold" : "btn-outline-primary")"
+                                        @onclick="() => GoToPage(pageNum)">
+                                    @pageNum
+                                </button>
+                            }
+                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                    disabled="@(Order.Page >= Order.TotalPages)"
+                                    @onclick="() => ChangePage(1)">
+                                Siguiente
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                @* Modal Footer *@
+                <div class="modal-footer bg-light px-4 py-2 border-top-0 d-flex justify-content-end">
+                    <button type="button" class="btn btn-secondary btn-modal-close px-4" @onclick="Order.CloseModal">
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@* ========================================================================= *@
+@* MODAL: BÚSQUEDA DE PRODUCTOS (Matches Screenshot 4)                        *@
+@* ========================================================================= *@
+@if (Order.IsProductModalOpen)
+{
+    <div class="modal d-block modal-backdrop-custom" tabindex="-1" role="dialog" aria-modal="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+            <div class="modal-content shadow-lg border-0 rounded-3 overflow-hidden">
+                @* Blue Header *@
+                <div class="modal-header modal-header-blue text-white px-4 py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="modal-title fw-bold mb-0">Búsqueda de Productos</h5>
+                    <button type="button" class="btn-close-white" aria-label="Cerrar" @onclick="Order.CloseModal">✕</button>
+                </div>
+
+                <div class="modal-body p-4">
+                    @* Search & Filter Controls *@
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-4 col-sm-5">
+                            <select class="form-select filter-dropdown" value="@Order.ProductFilter" @onchange="OnProductFilterChanged">
+                                <option value="Todas">Todas</option>
+                                <option value="ID">ID</option>
+                                <option value="Nombre">Nombre</option>
+                                <option value="Stock">Stock</option>
+                                <option value="Precio">Precio</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 col-sm-5">
+                            <input type="text"
+                                   class="form-control search-input"
+                                   placeholder="Buscar por nombre o ID..."
+                                   value="@Order.SearchText"
+                                   @oninput="OnProductSearchInput"
+                                   @onkeydown="SearchOnEnter" />
+                        </div>
+                        <div class="col-md-2 col-sm-2 d-grid">
+                            <button type="button" class="btn btn-primary btn-search-blue fw-medium" @onclick="SearchNow">
+                                Buscar
+                            </button>
+                        </div>
+                    </div>
+
+                    @* Product Table *@
+                    <div class="table-responsive">
+                        <table class="table align-middle search-result-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th style="width: 12%;"></th>
+                                    <th style="width: 40%;">Nombre del Producto</th>
+                                    <th class="text-center" style="width: 20%;">Stock Disponible</th>
+                                    <th class="text-end" style="width: 14%;">Precio</th>
+                                    <th class="text-center" style="width: 14%;">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Order.Products.Count == 0)
+                                {
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4 text-muted">
+                                            No se encontraron productos disponibles con el criterio especificado.
+                                        </td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    @foreach (var product in Order.Products)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <span class="product-id-badge">#@product.Id</span>
+                                            </td>
+                                            <td class="fw-semibold text-dark">
+                                                @product.Name
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge-stock">@product.UnitsInStock unidades</span>
+                                            </td>
+                                            <td class="text-end fw-medium text-dark">
+                                                @FormatDecimal(product.UnitPrice)
+                                            </td>
+                                            <td class="text-center">
+                                                <button type="button" class="btn btn-sm btn-primary btn-search-blue fw-semibold px-3"
+                                                        @onclick="() => AddProduct(product)">
+                                                    Agregar
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @* Pagination Row *@
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 pt-3 border-top">
+                        <div class="text-muted small">
+                            Mostrando <strong>@Order.Products.Count</strong> de <strong>@Order.TotalCount</strong> productos (Pág. @Order.Page de @Order.TotalPages)
+                        </div>
+                        <div class="pagination-buttons d-flex align-items-center gap-1">
+                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                    disabled="@(Order.Page <= 1)"
+                                    @onclick="() => ChangePage(-1)">
+                                Anterior
+                            </button>
+                            @for (int i = 1; i <= Order.TotalPages; i++)
+                            {
+                                int pageNum = i;
+                                <button type="button" class="btn btn-sm @(pageNum == Order.Page ? "btn-primary active fw-bold" : "btn-outline-primary")"
+                                        @onclick="() => GoToPage(pageNum)">
+                                    @pageNum
+                                </button>
+                            }
+                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                    disabled="@(Order.Page >= Order.TotalPages)"
+                                    @onclick="() => ChangePage(1)">
+                                Siguiente
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                @* Modal Footer *@
+                <div class="modal-footer bg-light px-4 py-2 border-top-0 d-flex justify-content-end">
+                    <button type="button" class="btn btn-secondary btn-modal-close px-4" @onclick="Order.CloseModal">
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@* ========================================================================= *@
+@* MODAL: FACTURA GENERADA                                                   *@
+@* ========================================================================= *@
+@if (Order.CreatedInvoice is not null)
+{
+    var invoice = Order.CreatedInvoice;
+    <div class="modal d-block modal-backdrop-custom invoice-modal" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="created-invoice-title">
+        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+            <div class="modal-content shadow-lg border-0 rounded-3">
+                <div class="modal-header bg-success text-white px-4 py-3">
+                    <h5 class="modal-title fw-bold" id="created-invoice-title">✅ Factura generada exitosamente</h5>
+                    <button type="button" class="btn-close-white" aria-label="Cerrar" @onclick="Order.CloseCreatedInvoice">✕</button>
+                </div>
+                <div class="modal-body p-4">
+                    <section id="created-invoice" class="invoice-paper p-4 bg-white border rounded-3 shadow-sm">
+                        <div class="d-flex justify-content-between align-items-start border-bottom pb-3 mb-3">
+                            <div>
+                                <h2 class="fw-bold text-primary mb-0">NorthWind</h2>
+                                <span class="text-muted fw-semibold">Factura Comercial de Venta</span>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-primary fs-6 px-3 py-2 mb-1">Factura n.º @invoice.OrderId</span>
+                                <div class="text-muted small">Fecha: @invoice.OrderDate.ToString("g", EcCulture)</div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-4 bg-light p-3 rounded-2">
+                            <div class="col-sm-6">
+                                <strong class="text-secondary small d-block">CLIENTE:</strong>
+                                <span class="fw-bold text-dark fs-6">@invoice.CustomerName</span>
+                                <span class="customer-badge ms-2">@invoice.CustomerId</span>
+                            </div>
+                            <div class="col-sm-6 text-sm-end">
+                                <strong class="text-secondary small d-block">DESTINO DE ENTREGA:</strong>
+                                <div>@invoice.ShipAddress</div>
+                                <div>@invoice.ShipCity, @invoice.ShipCountry @invoice.ShipPostalCode</div>
+                            </div>
+                        </div>
+
+                        <table class="table table-bordered align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Producto</th>
+                                    <th class="text-center">Cantidad</th>
+                                    <th class="text-end">Precio unitario</th>
+                                    <th class="text-end">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var detail in invoice.Details)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">@detail.ProductName</td>
+                                        <td class="text-center">@detail.Quantity</td>
+                                        <td class="text-end">@FormatCurrency(detail.UnitPrice)</td>
+                                        <td class="text-end fw-bold">@FormatCurrency(detail.LineSubtotal)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+
+                        <div class="row justify-content-end mt-4">
+                            <div class="col-md-5">
+                                <div class="p-3 bg-light rounded-2 border">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span>Subtotal:</span>
+                                        <span class="fw-medium">@FormatCurrency(invoice.Subtotal)</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span>IVA (@invoice.TaxRate.ToString("P0", CultureInfo.InvariantCulture)):</span>
+                                        <span class="fw-medium">@FormatCurrency(invoice.Tax)</span>
+                                    </div>
+                                    <hr class="my-2" />
+                                    <div class="d-flex justify-content-between fs-5 fw-bold text-primary">
+                                        <span>Total:</span>
+                                        <span>@FormatCurrency(invoice.Total)</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+                <div class="modal-footer bg-light px-4 py-3 d-flex justify-content-between">
+                    <button type="button" class="btn btn-outline-secondary" @onclick="Order.CloseCreatedInvoice">
+                        Cerrar
+                    </button>
+                    <button type="button" class="btn btn-primary fw-semibold px-4" @onclick="PrintInvoice">
+                        🖨️ Imprimir / Guardar como PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .modal-backdrop-custom {
+        background-color: rgba(15, 23, 42, 0.65);
+        backdrop-filter: blur(2px);
+    }
+
+    .modal-header-blue {
+        background-color: #0d6efd;
+    }
+
+    .btn-close-white {
+        background: transparent;
+        border: none;
+        color: #ffffff;
+        font-size: 1.25rem;
+        font-weight: bold;
+        line-height: 1;
+        cursor: pointer;
+        opacity: 0.85;
+        transition: opacity 0.2s;
+    }
+
+    .btn-close-white:hover {
+        opacity: 1;
+    }
+
+    .customer-badge {
+        display: inline-block;
+        background-color: #6c757d;
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 0.78rem;
+        padding: 0.25rem 0.55rem;
+        border-radius: 4px;
+        letter-spacing: 0.5px;
+    }
+
+    .product-id-badge {
+        display: inline-block;
+        background-color: #6c757d;
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 0.78rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+    }
+
+    .badge-stock {
+        display: inline-block;
+        border: 1px solid #ced4da;
+        background-color: #f8f9fa;
+        color: #212529;
+        font-size: 0.82rem;
+        font-weight: 600;
+        padding: 0.25rem 0.65rem;
+        border-radius: 6px;
+    }
+
+    .badge-deuda {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid #dc3545;
+        background-color: #fff5f5;
+        color: #dc3545;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 0.15rem 0.5rem;
+        border-radius: 4px;
+    }
+
+    .btn-select-success {
+        background-color: #198754;
+        border-color: #198754;
+        color: #ffffff;
+    }
+
+    .btn-select-success:hover {
+        background-color: #157347;
+        border-color: #146c43;
+        color: #ffffff;
+    }
+
+    .btn-select-warning {
+        background-color: #ffc107;
+        border-color: #ffc107;
+        color: #000000;
+    }
+
+    .btn-select-warning:hover {
+        background-color: #ffca2c;
+        border-color: #ffc720;
+        color: #000000;
+    }
+
+    .btn-search-blue {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+        color: #ffffff;
+    }
+
+    .btn-search-blue:hover {
+        background-color: #0b5ed7;
+        border-color: #0a58ca;
+        color: #ffffff;
+    }
+
+    .btn-modal-close {
+        background-color: #5c636a;
+        border-color: #565e64;
+        color: #ffffff;
+    }
+
+    .btn-modal-close:hover {
+        background-color: #4b5258;
+        border-color: #444a50;
+        color: #ffffff;
+    }
+
+    .filter-dropdown {
+        border-color: #ced4da;
+        font-weight: 500;
+    }
+
+    .search-input {
+        border-color: #ced4da;
+    }
+
+    .search-result-table thead th {
+        border-bottom: 2px solid #212529;
+        font-weight: 700;
+        color: #212529;
+    }
+
+    .search-result-table tbody tr {
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .form-control-modern {
+        border-radius: 6px;
+        padding: 0.55rem 0.75rem;
+        border-color: #ced4da;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+
+    .form-control-modern:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+    }
+
+    .header-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 1rem;
+    }
+
+    .save-order-btn {
+        transition: transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+
+    .save-order-btn:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 0.5rem 1rem rgba(25, 135, 84, 0.25) !important;
+    }
+
+    @@media print {
+        body * { visibility: hidden !important; }
+        #created-invoice, #created-invoice * { visibility: visible !important; }
+        #created-invoice { position: absolute; left: 0; top: 0; width: 100%; padding: 1rem; }
+    }
+</style>

@@ -1,0 +1,11 @@
+global using NorthWind.Sales.Backend.BusinessObjects.POCOEntities;
+global using NorthWind.Sales.Backend.BusinessObjects.Aggregates;
+global using NorthWind.Sales.Backend.BusinessObjects.Interfaces.Repositories;
+global using NorthWind.Sales.Backend.BusinessObjects.ValueObjects;
+global using NorthWind.Sales.Backend.Repositories.Entities;
+global using NorthWind.Sales.Backend.Repositories.Interfaces;
+global using NorthWind.Sales.Backend.Repositories.Repositories;
+global using NorthWind.DomainLogs.Entities.Interfaces;
+global using NorthWind.Sales.Entities.Dtos;
+global using NorthWind.Exceptions.Entities.Exceptions;
+global using NorthWind.Validation.Entities.ValueObjects;

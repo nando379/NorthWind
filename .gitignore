@@ -1,0 +1,22 @@
+# Visual Studio / VS Code
+.vs/
+.vscode/
+*.user
+*.suo
+
+# .NET build output
+**/bin/
+**/obj/
+artifacts/
+
+# Local publish output
+/publish/
+
+# Local configuration and secrets
+**/appsettings.Development.json
+**/appsettings.Local.json
+**/secrets.json
+
+# OS files
+Thumbs.db
+.DS_Store

@@ -1,0 +1,29 @@
+<AuthorizeView>
+    <Authorized>
+        <span class="user-greeting me-3 d-inline-flex align-items-center">
+            <span class="avatar-circle bg-primary text-white rounded-circle d-inline-flex justify-content-center align-items-center me-2" style="width: 28px; height: 28px; font-size: 0.85rem;">
+                👤
+            </span>
+            <span class="fw-semibold text-dark">@GetUserName(context)</span>
+        </span>
+        <a href="user/logout" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1 shadow-sm text-decoration-none">
+            @CommonMessages.CloseSessionText
+        </a>
+    </Authorized>
+    <NotAuthorized>
+        <a href="user/register" class="btn btn-sm btn-outline-primary rounded-pill px-3 me-2 text-decoration-none">
+            @CommonMessages.CreateAccountText
+        </a>
+        <a href="user/login" class="btn btn-sm btn-primary rounded-pill px-3 text-decoration-none">
+            @CommonMessages.LoginText
+        </a>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    string GetUserName(AuthenticationState context) =>
+        context.User.Claims
+            .Where(c => c.Type == "FullName")
+            .Select(c => c.Value)
+            .FirstOrDefault() ?? context.User.Identity?.Name;
+}

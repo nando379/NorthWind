@@ -1,0 +1,440 @@
+@page "/invoices"
+@using System.Globalization
+@attribute [Authorize]
+@inject ICreateOrderGateway Gateway
+@inject IJSRuntime JavaScript
+
+<PageTitle>Consulta de Facturas</PageTitle>
+
+<div class="invoices-page-container">
+    @* Blue Header Banner (Matches Screenshot 5) *@
+    <div class="invoices-header-banner p-4 rounded-3 shadow-sm mb-4 d-flex flex-wrap justify-content-between align-items-center">
+        <div>
+            <h2 class="banner-title text-white fw-bold mb-1">Consulta de Facturas</h2>
+            <p class="banner-subtitle text-white-50 mb-0">Búsqueda de facturas con visualización e impresión en PDF</p>
+        </div>
+        <div>
+            <a href="createorder" class="btn btn-punto-venta rounded-pill fw-semibold shadow-sm px-4 py-2">
+                Punto de Venta
+            </a>
+        </div>
+    </div>
+
+    @* Main Search & Results Card *@
+    <div class="card shadow-sm border-0 rounded-3 overflow-hidden mb-4">
+        <div class="card-body p-4">
+            <h4 class="card-title fw-bold text-dark mb-4">Búsqueda de Facturas Guardadas</h4>
+
+            @* Filter and Search Row *@
+            <div class="row g-2 mb-4">
+                <div class="col-md-3 col-sm-4">
+                    <select class="form-select filter-select" value="@FilterField" @onchange="OnFilterChanged">
+                        <option value="Todas">Todas</option>
+                        <option value="Número de factura">Número de factura</option>
+                        <option value="Cliente / nombre">Cliente / nombre</option>
+                        <option value="Fecha">Fecha</option>
+                        <option value="Ciudad">Ciudad</option>
+                    </select>
+                </div>
+                <div class="col-md-6 col-sm-5">
+                    <input type="text"
+                           class="form-control search-input"
+                           placeholder="Buscar por número, cliente o ciudad..."
+                           value="@SearchText"
+                           @oninput="OnInvoiceSearchInput"
+                           @onkeydown="SearchOnEnter" />
+                </div>
+                <div class="col-md-3 col-sm-3 d-grid">
+                    <button type="button" class="btn btn-primary btn-search-factura fw-semibold" @onclick="SearchNow">
+                        Buscar Factura
+                    </button>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+            {
+                <div class="alert alert-danger shadow-sm mb-3">@ErrorMessage</div>
+            }
+
+            @* Invoices Table (Matches Screenshot 5) *@
+            <div class="table-responsive">
+                <table class="table align-middle invoice-table mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 12%;"># Factura</th>
+                            <th style="width: 20%;">Fecha</th>
+                            <th style="width: 30%;">Cliente</th>
+                            <th style="width: 18%;">Destino</th>
+                            <th class="text-end" style="width: 10%;">Total</th>
+                            <th class="text-center" style="width: 10%;">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Results.Items.Count == 0 && string.IsNullOrWhiteSpace(ErrorMessage))
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    No se encontraron facturas con el criterio seleccionado.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Results.Items)
+                            {
+                                <tr>
+                                    <td>
+                                        <span class="invoice-number-badge">#@item.OrderId</span>
+                                    </td>
+                                    <td class="text-secondary small">
+                                        @item.OrderDate.ToString("dd/MM/yyyy HH:mm", EcCulture)
+                                    </td>
+                                    <td>
+                                        <span class="fw-semibold text-dark me-2">@item.CustomerName</span>
+                                        <span class="customer-badge">@item.CustomerId</span>
+                                    </td>
+                                    <td class="text-secondary small">
+                                        @(string.IsNullOrWhiteSpace(item.ShipCity) ? "Ambato, Ecuador" : $"{item.ShipCity}{(string.IsNullOrWhiteSpace(item.ShipCountry) ? "" : $", {item.ShipCountry}")}")
+                                    </td>
+                                    <td class="text-end fw-bold text-dark">
+                                        @FormatDecimal(item.Total)
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-sm btn-outline-primary btn-detail-action" @onclick="() => Open(item.OrderId)">
+                                            Ver Detalle
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @* Pagination Row (Matches Screenshot 5) *@
+            <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 pt-3 border-top">
+                <div class="text-muted small">
+                    Mostrando <strong>@Results.Items.Count</strong> de <strong>@Results.TotalCount</strong> facturas (Pág. @Page de @TotalPages)
+                </div>
+                <div class="pagination-buttons d-flex align-items-center gap-1">
+                    <button type="button" class="btn btn-sm btn-outline-primary"
+                            disabled="@(Page <= 1)"
+                            @onclick="() => ChangePage(-1)">
+                        Anterior
+                    </button>
+                    @for (int i = 1; i <= TotalPages; i++)
+                    {
+                        int pageNum = i;
+                        <button type="button" class="btn btn-sm @(pageNum == Page ? "btn-primary active fw-bold" : "btn-outline-primary")"
+                                @onclick="() => GoToPage(pageNum)">
+                            @pageNum
+                        </button>
+                    }
+                    <button type="button" class="btn btn-sm btn-outline-primary"
+                            disabled="@(Page >= TotalPages)"
+                            @onclick="() => ChangePage(1)">
+                        Siguiente
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* Invoice Detail Modal *@
+@if (Invoice is not null)
+{
+    <div class="modal d-block modal-backdrop-custom invoice-modal" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="invoice-title">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+            <div class="modal-content shadow-lg border-0 rounded-3">
+                <div class="modal-header bg-primary text-white px-4 py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="modal-title fw-bold" id="invoice-title">Factura n.º @Invoice.OrderId</h5>
+                    <button type="button" class="btn-close-white" aria-label="Cerrar" @onclick="CloseInvoice">✕</button>
+                </div>
+                <div class="modal-body p-4">
+                    <section id="viewed-invoice" class="invoice-paper bg-white p-4 border rounded-3 shadow-sm">
+                        <div class="d-flex justify-content-between align-items-start border-bottom pb-3 mb-3">
+                            <div>
+                                <h2 class="fw-bold text-primary mb-0">NorthWind</h2>
+                                <span class="text-muted fw-semibold">Factura de venta</span>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-primary fs-6 px-3 py-2 mb-1">Factura n.º @Invoice.OrderId</span>
+                                <div class="text-muted small">@Invoice.OrderDate.ToString("d", EcCulture)</div>
+                            </div>
+                        </div>
+
+                        <div class="bg-light p-3 rounded-2 mb-4">
+                            <div><strong>Cliente:</strong> @Invoice.CustomerName <span class="customer-badge ms-1">@Invoice.CustomerId</span></div>
+                            <div class="mt-1"><strong>Enviar a:</strong> @Invoice.ShipAddress, @Invoice.ShipCity, @Invoice.ShipCountry @Invoice.ShipPostalCode</div>
+                        </div>
+
+                        <table class="table table-bordered align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Producto</th>
+                                    <th class="text-center">Cantidad</th>
+                                    <th class="text-end">Precio unitario</th>
+                                    <th class="text-end">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var detail in Invoice.Details)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">@detail.ProductName</td>
+                                        <td class="text-center">@detail.Quantity</td>
+                                        <td class="text-end">@FormatCurrency(detail.UnitPrice)</td>
+                                        <td class="text-end fw-bold">@FormatCurrency(detail.LineSubtotal)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+
+                        <div class="row justify-content-end mt-4">
+                            <div class="col-md-5">
+                                <div class="p-3 bg-light rounded-2 border">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span>Subtotal:</span>
+                                        <span class="fw-medium">@FormatCurrency(Invoice.Subtotal)</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span>IVA (@(Invoice.TaxRate.ToString("P0", CultureInfo.InvariantCulture))):</span>
+                                        <span class="fw-medium">@FormatCurrency(Invoice.Tax)</span>
+                                    </div>
+                                    <hr class="my-2" />
+                                    <div class="d-flex justify-content-between fs-5 fw-bold text-primary">
+                                        <span>Total:</span>
+                                        <span>@FormatCurrency(Invoice.Total)</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+                <div class="modal-footer bg-light px-4 py-3 d-flex justify-content-between">
+                    <button type="button" class="btn btn-outline-secondary" @onclick="CloseInvoice">
+                        Cerrar
+                    </button>
+                    <button type="button" class="btn btn-primary fw-semibold px-4" @onclick="Print">
+                        🖨️ Imprimir / Guardar como PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .invoices-header-banner {
+        background-color: #0d6efd;
+    }
+
+    .banner-title {
+        letter-spacing: -0.5px;
+    }
+
+    .btn-punto-venta {
+        background-color: #ffffff;
+        color: #0d6efd;
+        border: none;
+        transition: transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+
+    .btn-punto-venta:hover {
+        background-color: #f8f9fa;
+        color: #0a58ca;
+        transform: translateY(-1px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+
+    .invoice-number-badge {
+        color: #0d6efd;
+        font-weight: 700;
+        font-size: 0.95rem;
+    }
+
+    .customer-badge {
+        display: inline-block;
+        background-color: #6c757d;
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 0.75rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        letter-spacing: 0.5px;
+    }
+
+    .btn-search-factura {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+    }
+
+    .btn-search-factura:hover {
+        background-color: #0b5ed7;
+        border-color: #0a58ca;
+    }
+
+    .btn-detail-action {
+        border-color: #0d6efd;
+        color: #0d6efd;
+        font-size: 0.85rem;
+        padding: 0.25rem 0.65rem;
+    }
+
+    .btn-detail-action:hover {
+        background-color: #0d6efd;
+        color: #ffffff;
+    }
+
+    .invoice-table thead th {
+        border-bottom: 2px solid #212529;
+        font-weight: 700;
+        color: #212529;
+    }
+
+    .invoice-table tbody tr {
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .modal-backdrop-custom {
+        background-color: rgba(15, 23, 42, 0.65);
+        backdrop-filter: blur(2px);
+    }
+
+    .btn-close-white {
+        background: transparent;
+        border: none;
+        color: #ffffff;
+        font-size: 1.25rem;
+        font-weight: bold;
+        line-height: 1;
+        cursor: pointer;
+        opacity: 0.85;
+    }
+
+    .btn-close-white:hover {
+        opacity: 1;
+    }
+
+    @@media print {
+        body * { visibility: hidden !important; }
+        #viewed-invoice, #viewed-invoice * { visibility: visible !important; }
+        #viewed-invoice { position: absolute; left: 0; top: 0; width: 100%; padding: 1rem; }
+    }
+</style>
+
+@code {
+    private const int PageSize = 5;
+    private static readonly CultureInfo EcCulture = CultureInfo.GetCultureInfo("es-EC");
+
+    private static string FormatCurrency(decimal amount) => $"${amount.ToString("N2", CultureInfo.InvariantCulture)}";
+    private static string FormatDecimal(decimal amount) => amount.ToString("N2", EcCulture);
+
+    private string SearchText = string.Empty;
+    private string FilterField = "Todas";
+    private string ErrorMessage = string.Empty;
+    private int Page = 1;
+    private SearchPageDto<InvoiceSearchItemDto> Results = new([], 1, PageSize, 0);
+    private InvoiceDto? Invoice;
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling((double)Results.TotalCount / PageSize));
+    private CancellationTokenSource? _searchCts;
+
+    protected override async Task OnInitializedAsync() => await Search();
+
+    private async Task OnInvoiceSearchInput(ChangeEventArgs e)
+    {
+        SearchText = e.Value?.ToString() ?? string.Empty;
+        _searchCts?.Cancel();
+        _searchCts = new CancellationTokenSource();
+        var token = _searchCts.Token;
+
+        try
+        {
+            await Task.Delay(100, token);
+            Page = 1;
+            await Load();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (TaskCanceledException)
+        {
+        }
+    }
+
+    private async Task OnFilterChanged(ChangeEventArgs e)
+    {
+        FilterField = e.Value?.ToString() ?? "Todas";
+        await SearchNow();
+    }
+
+    private async Task SearchNow()
+    {
+        _searchCts?.Cancel();
+        Page = 1;
+        await Load();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task Search()
+    {
+        await SearchNow();
+    }
+
+    private async Task ChangePage(int offset)
+    {
+        int target = Page + offset;
+        if (target >= 1 && target <= TotalPages)
+        {
+            Page = target;
+            await Load();
+        }
+    }
+
+    private async Task GoToPage(int target)
+    {
+        if (target >= 1 && target <= TotalPages && target != Page)
+        {
+            Page = target;
+            await Load();
+        }
+    }
+
+    private async Task Load()
+    {
+        try
+        {
+            Results = await Gateway.SearchInvoicesAsync(SearchText, FilterField, Page, PageSize);
+            ErrorMessage = string.Empty;
+        }
+        catch
+        {
+            ErrorMessage = "No se pudieron cargar las facturas. Verifica la conexión e inténtalo nuevamente.";
+        }
+    }
+
+    private async Task Open(int id)
+    {
+        try
+        {
+            Invoice = await Gateway.GetInvoiceAsync(id);
+            ErrorMessage = Invoice is null ? "No se encontró la factura solicitada." : string.Empty;
+        }
+        catch
+        {
+            Invoice = null;
+            ErrorMessage = "No se pudo cargar la factura. Inténtalo nuevamente.";
+        }
+    }
+
+    private void CloseInvoice() => Invoice = null;
+    private async Task Print() => await JavaScript.InvokeVoidAsync("window.print");
+
+    private async Task SearchOnEnter(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter")
+        {
+            await Search();
+        }
+    }
+}

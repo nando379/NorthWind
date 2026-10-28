@@ -1,0 +1,80 @@
+<EditForm Model=ViewModel OnValidSubmit=ViewModel.Register>
+    <ModelValidator Validator="ViewModel.Validator"
+                    @ref=ViewModel.ModelValidatorComponentReference />
+    <ValidationSummary />
+    <div class="form-group mb-3">
+        <label for="FirstName" class="form-label fw-semibold">
+            @UserRegistrationMessages.FirstNameLabel
+        </label>
+        <InputText id="FirstName"
+                   class="form-control"
+                   placeholder="@UserRegistrationMessages.FirstNameLabel"
+                   maxlength="50"
+                   onkeydown="if(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/.test(event.key) &amp;&amp; event.key.length === 1) { event.preventDefault(); }"
+                   oninput="this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '')"
+                   @bind-Value=ViewModel.FirstName />
+        <ValidationMessage For="@(() => ViewModel.FirstName)" class="text-danger small mt-1" />
+    </div>
+    <div class="form-group mb-3">
+        <label for="LastName" class="form-label fw-semibold">
+            @UserRegistrationMessages.LastNameLabel
+        </label>
+        <InputText id="LastName"
+                   class="form-control"
+                   placeholder="@UserRegistrationMessages.LastNameLabel"
+                   maxlength="50"
+                   onkeydown="if(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/.test(event.key) &amp;&amp; event.key.length === 1) { event.preventDefault(); }"
+                   oninput="this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '')"
+                   @bind-Value=ViewModel.LastName />
+        <ValidationMessage For="@(() => ViewModel.LastName)" class="text-danger small mt-1" />
+    </div>
+    <div class="form-group mb-3">
+        <label for="Email" class="form-label fw-semibold">
+            @CommonMessages.EmailLabel
+        </label>
+        <InputText id="Email"
+                   class="form-control"
+                   placeholder="@CommonMessages.EmailLabel"
+                   maxlength="100"
+                   onkeydown="if(event.key === ' ' || event.code === 'Space') { event.preventDefault(); }"
+                   oninput="this.value = this.value.replace(/\s/g, '')"
+                   @bind-Value=ViewModel.Email />
+        <ValidationMessage For="@(() => ViewModel.Email)" class="text-danger small mt-1" />
+    </div>
+    <div class="form-group mb-3">
+        <label for="Password" class="form-label fw-semibold">
+            @CommonMessages.PasswordLabel
+        </label>
+        <InputText id="Password"
+                   class="form-control"
+                   placeholder="@CommonMessages.PasswordLabel"
+                   type="password"
+                   @bind-Value=ViewModel.Password />
+        <ValidationMessage For="@(() => ViewModel.Password)" class="text-danger small mt-1" />
+    </div>
+    <div class="form-group mb-3">
+        <label for="PasswordConfirmation" class="form-label fw-semibold">
+            @UserRegistrationMessages.PasswordConfirmationLabel
+        </label>
+        <InputText id="PasswordConfirmation"
+                   class="form-control"
+                   placeholder="@UserRegistrationMessages.PasswordConfirmationLabel"
+                   type="password"
+                   @bind-Value=ViewModel.PasswordConfirmation />
+        <ValidationMessage For="@(() => ViewModel.PasswordConfirmation)" class="text-danger small mt-1" />
+    </div>
+    <div class="row p-3">
+        <div class="col">
+            <button class="btn btn-primary">
+                @UserRegistrationMessages.RegisterButtonText
+            </button>
+        </div>
+    </div>
+</EditForm>
+<hr />
+@if (!string.IsNullOrWhiteSpace(ViewModel.InformationMessage))
+{
+    <div class="alert alert-info">
+        @ViewModel.InformationMessage
+    </div>
+}
