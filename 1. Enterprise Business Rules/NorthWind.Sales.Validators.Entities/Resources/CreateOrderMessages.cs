@@ -10,7 +10,7 @@ public class CreateOrderMessages
     public static string CustomerIdRequiredLength => "La longitud del identificador debe ser 5.";
     public static string ShipAddressRequired => "Debe proporcionar la dirección de envío.";
     public static string ShipAddressMaximumLength => "La longitud máxima de la dirección es 60.";
-    public static string ShipAddressAllowedCharacters => "La dirección solo puede contener letras y espacios.";
+    public static string ShipAddressAllowedCharacters => "La dirección solo puede contener letras, números y espacios.";
     public static string ShipCityRequired => "Debe proporcionar la ciudad de envío.";
     public static string ShipCityMinimumLength => "Debe especificar al menos 3 caracteres del nombre de la ciudad.";
     public static string ShipCityMaximumLength => "La longitud máxima de la ciudad es 15.";

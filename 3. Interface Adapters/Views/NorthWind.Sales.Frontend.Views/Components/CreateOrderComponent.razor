@@ -100,7 +100,7 @@
                         <label class="form-label fw-semibold text-secondary small mb-1">
                             Dirección de envío <span class="text-danger">*</span>
                         </label>
-                        <FilteredInputText class="form-control form-control-modern" placeholder="Ej. Avenida Cevallos" MaxLength="60" FilterMode="InputFilterMode.Address" @bind-Value="Order.ShipAddress" />
+                        <FilteredInputText class="form-control form-control-modern" placeholder="Ej. Avenida Cevallos 1234" MaxLength="60" FilterMode="InputFilterMode.Address" @bind-Value="Order.ShipAddress" />
                         <ValidationMessage For="() => Order.ShipAddress" class="text-danger small mt-1" />
                     </div>
                     <div class="col-md-3">
