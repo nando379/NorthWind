@@ -36,8 +36,17 @@ document.addEventListener("beforeinput", event => {
         if (mode === "DigitsOnly") {
             return isDigit;
         }
+        if (mode === "email") {
+            return isAlphanumeric || ".%+-_@".includes(character);
+        }
         if (mode === "customer-search") {
-            return isAlphanumeric || ((filter === "Nombre" || filter === "Todas") && character === " ");
+            if (filter === "Nombre") {
+                return isLetter || character === " ";
+            }
+            if (filter === "ID") {
+                return isAlphanumeric;
+            }
+            return isAlphanumeric || character === " ";
         }
         if (mode === "product-search") {
             if (filter === "ID" || filter === "Stock" || filter === "Precio") {
@@ -46,10 +55,10 @@ document.addEventListener("beforeinput", event => {
             return isAlphanumeric || character === " ";
         }
         if (mode === "invoice-search") {
-            if (filter === "Número de factura" || filter === "Fecha") {
+            if (filter === "Número de factura") {
                 return isDigit;
             }
-            if (filter === "Ciudad") {
+            if (filter === "Ciudad" || filter === "Cliente / nombre") {
                 return isLetter || character === " ";
             }
             return isAlphanumeric || character === " ";

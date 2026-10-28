@@ -8,7 +8,10 @@ internal class UserCredentialsDtoValidator :
         base(validationService)
     {
         AddRuleFor(u => u.Email)
+            .StopOnFirstFailure()
             .NotEmpty(UserLoginMessages.RequiredEmailErrorMessage)
+            .Must(email => !string.IsNullOrEmpty(email) && !email.Any(char.IsWhiteSpace),
+                UserLoginMessages.EmailCannotContainSpacesErrorMessage)
             .EmailAddress(UserLoginMessages.InvalidEmailErrorMessage);
         AddRuleFor(u => u.Password)
             .NotEmpty(UserLoginMessages.RequiredPasswordErrorMessage);

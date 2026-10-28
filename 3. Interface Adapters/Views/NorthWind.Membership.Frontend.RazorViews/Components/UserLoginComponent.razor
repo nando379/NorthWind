@@ -8,7 +8,11 @@
         </label>
         <InputText id="Email"
                    class="form-control"
+                   type="email"
                    placeholder="@CommonMessages.EmailLabel"
+                   maxlength="100"
+                   autocomplete="username"
+                   data-filter-mode="email"
                    @bind-Value=ViewModel.Email />
         <ValidationMessage For="@(() => ViewModel.Email)" />
     </div>

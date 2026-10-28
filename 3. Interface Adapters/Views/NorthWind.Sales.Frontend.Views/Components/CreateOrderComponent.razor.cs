@@ -83,7 +83,8 @@ public partial class CreateOrderComponent : IDisposable
         Func<char, bool> allowed = filter switch
         {
             "ID" => char.IsLetterOrDigit,
-            "Nombre" or "Todas" => char.IsLetterOrDigit,
+            "Nombre" => char.IsLetter,
+            "Todas" => char.IsLetterOrDigit,
             _ => char.IsLetterOrDigit
         };
 

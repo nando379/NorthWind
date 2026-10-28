@@ -32,7 +32,6 @@
                         <option value="Todas">Todas</option>
                         <option value="Número de factura">Número de factura</option>
                         <option value="Cliente / nombre">Cliente / nombre</option>
-                        <option value="Fecha">Fecha</option>
                         <option value="Ciudad">Ciudad</option>
                     </select>
                 </div>
@@ -463,9 +462,9 @@
     {
         Func<char, bool> isAllowed = filter switch
         {
-            "Número de factura" or "Fecha" => char.IsDigit,
-            "Ciudad" => char.IsLetter,
-            "Todas" or "Cliente / nombre" => char.IsLetterOrDigit,
+            "Número de factura" => char.IsDigit,
+            "Ciudad" or "Cliente / nombre" => char.IsLetter,
+            "Todas" => char.IsLetterOrDigit,
             _ => char.IsLetterOrDigit
         };
 
