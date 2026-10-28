@@ -317,10 +317,80 @@
         opacity: 1;
     }
 
+    @@page {
+        size: A4 portrait;
+        margin: 8mm;
+    }
+
     @@media print {
+        html, body, #app {
+            width: 100% !important;
+            height: 0 !important;
+            min-height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+        }
+
         body * { visibility: hidden !important; }
+
+        .invoice-modal,
+        .invoice-modal .modal-dialog,
+        .invoice-modal .modal-content,
+        .invoice-modal .modal-body {
+            position: static !important;
+            display: block !important;
+            width: auto !important;
+            height: 0 !important;
+            min-height: 0 !important;
+            max-height: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: visible !important;
+            transform: none !important;
+            border: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            backdrop-filter: none !important;
+        }
+
+        .invoice-modal .modal-header,
+        .invoice-modal .modal-footer { display: none !important; }
+
         #viewed-invoice, #viewed-invoice * { visibility: visible !important; }
-        #viewed-invoice { position: absolute; left: 0; top: 0; width: 100%; padding: 1rem; }
+
+        #viewed-invoice {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            z-index: 999999 !important;
+            box-sizing: border-box !important;
+            width: 100% !important;
+            max-height: 281mm !important;
+            margin: 0 !important;
+            padding: 4mm !important;
+            overflow: hidden !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            background: #fff !important;
+            box-shadow: none !important;
+            color: #000 !important;
+            font-size: 9pt !important;
+            line-height: 1.2 !important;
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+        }
+
+        #viewed-invoice h2 { font-size: 19pt !important; }
+        #viewed-invoice .p-4 { padding: 3mm !important; }
+        #viewed-invoice .mb-4 { margin-bottom: 3mm !important; }
+        #viewed-invoice .mt-4 { margin-top: 3mm !important; }
+        #viewed-invoice .table { margin-bottom: 3mm !important; font-size: 8.5pt !important; }
+        #viewed-invoice .table th,
+        #viewed-invoice .table td { padding: 1.5mm !important; }
+        #viewed-invoice tr,
+        #viewed-invoice th,
+        #viewed-invoice td { break-inside: avoid !important; page-break-inside: avoid !important; }
     }
 </style>
 

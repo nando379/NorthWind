@@ -100,28 +100,28 @@
                         <label class="form-label fw-semibold text-secondary small mb-1">
                             Dirección de envío <span class="text-danger">*</span>
                         </label>
-                        <InputText class="form-control form-control-modern" placeholder="Ej. Av. Cevallos 12-34" @bind-Value="Order.ShipAddress" />
+                        <InputText class="form-control form-control-modern" placeholder="Ej. Av Cevallos 1234" maxlength="60" @bind-Value="Order.ShipAddress" @bind-Value:event="oninput" />
                         <ValidationMessage For="() => Order.ShipAddress" class="text-danger small mt-1" />
                     </div>
                     <div class="col-md-3">
                         <label class="form-label fw-semibold text-secondary small mb-1">
                             Ciudad <span class="text-danger">*</span>
                         </label>
-                        <InputText class="form-control form-control-modern" placeholder="Ej. Ambato" @bind-Value="Order.ShipCity" />
+                        <InputText class="form-control form-control-modern" placeholder="Ej. Ambato" maxlength="15" @bind-Value="Order.ShipCity" @bind-Value:event="oninput" />
                         <ValidationMessage For="() => Order.ShipCity" class="text-danger small mt-1" />
                     </div>
                     <div class="col-md-3">
                         <label class="form-label fw-semibold text-secondary small mb-1">
                             País <span class="text-danger">*</span>
                         </label>
-                        <InputText class="form-control form-control-modern" placeholder="Ej. Ecuador" @bind-Value="Order.ShipCountry" />
+                        <InputText class="form-control form-control-modern" placeholder="Ej. Ecuador" maxlength="15" @bind-Value="Order.ShipCountry" @bind-Value:event="oninput" />
                         <ValidationMessage For="() => Order.ShipCountry" class="text-danger small mt-1" />
                     </div>
                     <div class="col-md-2">
                         <label class="form-label fw-semibold text-secondary small mb-1">
                             Código postal
                         </label>
-                        <InputText class="form-control form-control-modern" placeholder="Ej. 180101" @bind-Value="Order.ShipPostalCode" />
+                        <InputText class="form-control form-control-modern" placeholder="Ej. 180101" maxlength="10" @bind-Value="Order.ShipPostalCode" @bind-Value:event="oninput" />
                         <ValidationMessage For="() => Order.ShipPostalCode" class="text-danger small mt-1" />
                     </div>
                 </div>
@@ -802,9 +802,79 @@
         box-shadow: 0 0.5rem 1rem rgba(25, 135, 84, 0.25) !important;
     }
 
+    @@page {
+        size: A4 portrait;
+        margin: 8mm;
+    }
+
     @@media print {
+        html, body, #app {
+            width: 100% !important;
+            height: 0 !important;
+            min-height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+        }
+
         body * { visibility: hidden !important; }
+
+        .invoice-modal,
+        .invoice-modal .modal-dialog,
+        .invoice-modal .modal-content,
+        .invoice-modal .modal-body {
+            position: static !important;
+            display: block !important;
+            width: auto !important;
+            height: 0 !important;
+            min-height: 0 !important;
+            max-height: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: visible !important;
+            transform: none !important;
+            border: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            backdrop-filter: none !important;
+        }
+
+        .invoice-modal .modal-header,
+        .invoice-modal .modal-footer { display: none !important; }
+
         #created-invoice, #created-invoice * { visibility: visible !important; }
-        #created-invoice { position: absolute; left: 0; top: 0; width: 100%; padding: 1rem; }
+
+        #created-invoice {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            z-index: 999999 !important;
+            box-sizing: border-box !important;
+            width: 100% !important;
+            max-height: 281mm !important;
+            margin: 0 !important;
+            padding: 4mm !important;
+            overflow: hidden !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            background: #fff !important;
+            box-shadow: none !important;
+            color: #000 !important;
+            font-size: 9pt !important;
+            line-height: 1.2 !important;
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+        }
+
+        #created-invoice h2 { font-size: 19pt !important; }
+        #created-invoice .p-4 { padding: 3mm !important; }
+        #created-invoice .mb-4 { margin-bottom: 3mm !important; }
+        #created-invoice .mt-4 { margin-top: 3mm !important; }
+        #created-invoice .table { margin-bottom: 3mm !important; font-size: 8.5pt !important; }
+        #created-invoice .table th,
+        #created-invoice .table td { padding: 1.5mm !important; }
+        #created-invoice tr,
+        #created-invoice th,
+        #created-invoice td { break-inside: avoid !important; page-break-inside: avoid !important; }
     }
 </style>

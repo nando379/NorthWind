@@ -7,16 +7,46 @@ public class CreateOrderViewModel(ICreateOrderGateway gateway,
 {
     public const int PageSize = 5;
 
+    private string _shipAddress = string.Empty;
+    private string _shipCity = string.Empty;
+    private string _shipCountry = string.Empty;
+    private string _shipPostalCode = string.Empty;
+
     public IModelValidatorHub<CreateOrderViewModel> Validator => validator;
     public ModelValidator<CreateOrderViewModel>? ModelValidatorComponentReference { get; set; }
 
     public string CustomerId { get; set; } = string.Empty;
     public string CustomerName { get; set; } = string.Empty;
     public decimal CustomerBalance { get; set; }
-    public string ShipAddress { get; set; } = string.Empty;
-    public string ShipCity { get; set; } = string.Empty;
-    public string ShipCountry { get; set; } = string.Empty;
-    public string ShipPostalCode { get; set; } = string.Empty;
+    public string ShipAddress
+    {
+        get => _shipAddress;
+        set => _shipAddress = FilterInput(value, 60,
+            character => char.IsLetter(character) || char.IsDigit(character) || character == ' ');
+    }
+
+    public string ShipCity
+    {
+        get => _shipCity;
+        set => _shipCity = FilterInput(value, 15,
+            character => char.IsLetter(character) || character == ' ');
+    }
+
+    public string ShipCountry
+    {
+        get => _shipCountry;
+        set => _shipCountry = FilterInput(value, 15,
+            character => char.IsLetter(character) || character == ' ');
+    }
+
+    public string ShipPostalCode
+    {
+        get => _shipPostalCode;
+        set => _shipPostalCode = FilterInput(value, 10, char.IsLetterOrDigit);
+    }
+
+    private static string FilterInput(string? value, int maxLength, Func<char, bool> isAllowed) =>
+        new((value ?? string.Empty).Where(isAllowed).Take(maxLength).ToArray());
 
     public List<CreateOrderDetailViewModel> OrderDetails { get; set; } = [];
     public string InformationMessage { get; set; } = string.Empty;
@@ -180,6 +210,13 @@ public class CreateOrderViewModel(ICreateOrderGateway gateway,
             return;
         }
 
+        if (ShipAddress.Length > 60 ||
+            ShipAddress.Any(character => !char.IsLetter(character) && !char.IsDigit(character) && character != ' '))
+        {
+            InformationMessage = "La dirección debe tener máximo 60 caracteres y solo contener letras, números y espacios.";
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(ShipCity))
         {
             InformationMessage = "Debes ingresar la ciudad de envío.";
@@ -187,7 +224,7 @@ public class CreateOrderViewModel(ICreateOrderGateway gateway,
         }
 
         if (ShipCity.Length < 3 || ShipCity.Length > 15 ||
-            ShipCity.Any(character => !char.IsLetter(character) && !char.IsWhiteSpace(character)))
+            ShipCity.Any(character => !char.IsLetter(character) && character != ' '))
         {
             InformationMessage = "La ciudad debe tener entre 3 y 15 caracteres y solo contener letras y espacios.";
             return;
@@ -200,9 +237,15 @@ public class CreateOrderViewModel(ICreateOrderGateway gateway,
         }
 
         if (ShipCountry.Length < 3 || ShipCountry.Length > 15 ||
-            ShipCountry.Any(character => !char.IsLetter(character) && !char.IsWhiteSpace(character)))
+            ShipCountry.Any(character => !char.IsLetter(character) && character != ' '))
         {
             InformationMessage = "El país debe tener entre 3 y 15 caracteres y solo contener letras y espacios.";
+            return;
+        }
+
+        if (ShipPostalCode.Length > 10 || ShipPostalCode.Any(character => !char.IsLetterOrDigit(character)))
+        {
+            InformationMessage = "El código postal debe tener máximo 10 caracteres y solo contener letras y números.";
             return;
         }
 

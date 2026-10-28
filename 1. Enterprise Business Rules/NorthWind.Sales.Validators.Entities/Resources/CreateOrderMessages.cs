@@ -10,6 +10,7 @@ public class CreateOrderMessages
     public static string CustomerIdRequiredLength => "La longitud del identificador debe ser 5.";
     public static string ShipAddressRequired => "Debe proporcionar la dirección de envío.";
     public static string ShipAddressMaximumLength => "La longitud máxima de la dirección es 60.";
+    public static string ShipAddressAllowedCharacters => "La dirección solo puede contener letras, números y espacios.";
     public static string ShipCityRequired => "Debe proporcionar la ciudad de envío.";
     public static string ShipCityMinimumLength => "Debe especificar al menos 3 caracteres del nombre de la ciudad.";
     public static string ShipCityMaximumLength => "La longitud máxima de la ciudad es 15.";
@@ -19,6 +20,7 @@ public class CreateOrderMessages
     public static string ShipCountryMaximumLength => "La longitud máxima del país es 15.";
     public static string ShipCountryLettersOnly => "El país solo debe contener letras y espacios.";
     public static string ShipPostalCodeMaximumLength => "La longitud máxima del código postal es 10.";
+    public static string ShipPostalCodeAllowedCharacters => "El código postal solo puede contener letras y números.";
     public static string OrderDetailsRequired => "Debe especificar los productos de la orden.";
     public static string OrderDetailsNotEmpty => "Debe especificar al menos un producto de la orden.";
 }

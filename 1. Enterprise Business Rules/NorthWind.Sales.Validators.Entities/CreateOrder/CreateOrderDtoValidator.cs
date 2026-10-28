@@ -14,26 +14,28 @@ internal class CreateOrderDtoValidator :
 
         AddRuleFor(c => c.ShipAddress)
             .NotEmpty(CreateOrderMessages.ShipAddressRequired)
-            .MaximumLength(60, CreateOrderMessages.ShipAddressMaximumLength);
+            .MaximumLength(60, CreateOrderMessages.ShipAddressMaximumLength)
+            .Must(address => string.IsNullOrWhiteSpace(address) || address.All(IsAddressCharacterAllowed),
+                CreateOrderMessages.ShipAddressAllowedCharacters);
 
         AddRuleFor(c => c.ShipCity)
             .NotEmpty(CreateOrderMessages.ShipCityRequired)
             .MinimumLength(3, CreateOrderMessages.ShipCityMinimumLength)
             .MaximumLength(15, CreateOrderMessages.ShipCityMaximumLength)
-            .Must(city => string.IsNullOrWhiteSpace(city) || city.All(character =>
-                    char.IsLetter(character) || char.IsWhiteSpace(character)),
+            .Must(city => string.IsNullOrWhiteSpace(city) || city.All(IsLetterOrSpace),
                 CreateOrderMessages.ShipCityLettersOnly);
 
         AddRuleFor(c => c.ShipCountry)
             .NotEmpty(CreateOrderMessages.ShipCountryRequired)
             .MinimumLength(3, CreateOrderMessages.ShipCountryMinimumLength)
             .MaximumLength(15, CreateOrderMessages.ShipCountryMaximumLength)
-            .Must(country => string.IsNullOrWhiteSpace(country) || country.All(character =>
-                    char.IsLetter(character) || char.IsWhiteSpace(character)),
+            .Must(country => string.IsNullOrWhiteSpace(country) || country.All(IsLetterOrSpace),
                 CreateOrderMessages.ShipCountryLettersOnly);
 
         AddRuleFor(c => c.ShipPostalCode)
-            .MaximumLength(10, CreateOrderMessages.ShipPostalCodeMaximumLength);
+            .MaximumLength(10, CreateOrderMessages.ShipPostalCodeMaximumLength)
+            .Must(postalCode => string.IsNullOrWhiteSpace(postalCode) || postalCode.All(char.IsLetterOrDigit),
+                CreateOrderMessages.ShipPostalCodeAllowedCharacters);
 
         AddRuleFor(c => c.OrderDetails)
             .NotNull(CreateOrderMessages.OrderDetailsRequired)
@@ -42,4 +44,10 @@ internal class CreateOrderDtoValidator :
         AddRuleForEach(c => c.OrderDetails)
             .SetValidator(detailValidator);
     }
+
+    private static bool IsAddressCharacterAllowed(char character) =>
+        char.IsLetter(character) || char.IsDigit(character) || character == ' ';
+
+    private static bool IsLetterOrSpace(char character) =>
+        char.IsLetter(character) || character == ' ';
 }
