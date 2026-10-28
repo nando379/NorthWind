@@ -25,7 +25,7 @@ document.addEventListener("beforeinput", event => {
         const isAlphanumeric = isLetter || isDigit;
 
         if (mode === "Address") {
-            return isAlphanumeric || character === " ";
+            return isLetter || character === " ";
         }
         if (mode === "LettersAndSpaces") {
             return isLetter || character === " ";

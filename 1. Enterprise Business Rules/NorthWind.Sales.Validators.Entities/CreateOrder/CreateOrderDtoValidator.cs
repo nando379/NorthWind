@@ -46,7 +46,7 @@ internal class CreateOrderDtoValidator :
     }
 
     private static bool IsAddressCharacterAllowed(char character) =>
-        char.IsLetter(character) || char.IsDigit(character) || character == ' ';
+        char.IsLetter(character) || character == ' ';
 
     private static bool IsLetterOrSpace(char character) =>
         char.IsLetter(character) || character == ' ';

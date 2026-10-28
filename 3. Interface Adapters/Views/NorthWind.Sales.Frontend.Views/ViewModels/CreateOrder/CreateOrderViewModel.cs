@@ -22,7 +22,7 @@ public class CreateOrderViewModel(ICreateOrderGateway gateway,
     {
         get => _shipAddress;
         set => _shipAddress = FilterInput(value, 60,
-            character => char.IsLetter(character) || char.IsDigit(character) || character == ' ');
+            character => char.IsLetter(character) || character == ' ');
     }
 
     public string ShipCity
@@ -211,9 +211,9 @@ public class CreateOrderViewModel(ICreateOrderGateway gateway,
         }
 
         if (ShipAddress.Length > 60 ||
-            ShipAddress.Any(character => !char.IsLetter(character) && !char.IsDigit(character) && character != ' '))
+            ShipAddress.Any(character => !char.IsLetter(character) && character != ' '))
         {
-            InformationMessage = "La dirección debe tener máximo 60 caracteres y solo contener letras, números y espacios.";
+            InformationMessage = "La dirección debe tener máximo 60 caracteres y solo contener letras y espacios.";
             return;
         }
 
