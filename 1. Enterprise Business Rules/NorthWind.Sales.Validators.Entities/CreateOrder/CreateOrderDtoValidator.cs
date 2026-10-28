@@ -20,15 +20,17 @@ internal class CreateOrderDtoValidator :
             .NotEmpty(CreateOrderMessages.ShipCityRequired)
             .MinimumLength(3, CreateOrderMessages.ShipCityMinimumLength)
             .MaximumLength(15, CreateOrderMessages.ShipCityMaximumLength)
-            .Must(city => string.IsNullOrWhiteSpace(city) || !city.Any(char.IsDigit),
-                CreateOrderMessages.ShipCityNoNumbers);
+            .Must(city => string.IsNullOrWhiteSpace(city) || city.All(character =>
+                    char.IsLetter(character) || char.IsWhiteSpace(character)),
+                CreateOrderMessages.ShipCityLettersOnly);
 
         AddRuleFor(c => c.ShipCountry)
             .NotEmpty(CreateOrderMessages.ShipCountryRequired)
             .MinimumLength(3, CreateOrderMessages.ShipCountryMinimumLength)
             .MaximumLength(15, CreateOrderMessages.ShipCountryMaximumLength)
-            .Must(country => string.IsNullOrWhiteSpace(country) || !country.Any(char.IsDigit),
-                CreateOrderMessages.ShipCountryNoNumbers);
+            .Must(country => string.IsNullOrWhiteSpace(country) || country.All(character =>
+                    char.IsLetter(character) || char.IsWhiteSpace(character)),
+                CreateOrderMessages.ShipCountryLettersOnly);
 
         AddRuleFor(c => c.ShipPostalCode)
             .MaximumLength(10, CreateOrderMessages.ShipPostalCodeMaximumLength);

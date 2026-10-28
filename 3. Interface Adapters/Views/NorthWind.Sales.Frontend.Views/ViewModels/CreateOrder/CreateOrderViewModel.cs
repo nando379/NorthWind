@@ -186,9 +186,10 @@ public class CreateOrderViewModel(ICreateOrderGateway gateway,
             return;
         }
 
-        if (ShipCity.Length < 3 || ShipCity.Length > 15 || ShipCity.Any(char.IsDigit))
+        if (ShipCity.Length < 3 || ShipCity.Length > 15 ||
+            ShipCity.Any(character => !char.IsLetter(character) && !char.IsWhiteSpace(character)))
         {
-            InformationMessage = "La ciudad debe tener entre 3 y 15 caracteres y no puede contener números.";
+            InformationMessage = "La ciudad debe tener entre 3 y 15 caracteres y solo contener letras y espacios.";
             return;
         }
 
@@ -198,9 +199,10 @@ public class CreateOrderViewModel(ICreateOrderGateway gateway,
             return;
         }
 
-        if (ShipCountry.Length < 3 || ShipCountry.Length > 15 || ShipCountry.Any(char.IsDigit))
+        if (ShipCountry.Length < 3 || ShipCountry.Length > 15 ||
+            ShipCountry.Any(character => !char.IsLetter(character) && !char.IsWhiteSpace(character)))
         {
-            InformationMessage = "El país debe tener entre 3 y 15 caracteres y no puede contener números.";
+            InformationMessage = "El país debe tener entre 3 y 15 caracteres y solo contener letras y espacios.";
             return;
         }
 

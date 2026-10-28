@@ -13,11 +13,11 @@ public class CreateOrderMessages
     public static string ShipCityRequired => "Debe proporcionar la ciudad de envío.";
     public static string ShipCityMinimumLength => "Debe especificar al menos 3 caracteres del nombre de la ciudad.";
     public static string ShipCityMaximumLength => "La longitud máxima de la ciudad es 15.";
-    public static string ShipCityNoNumbers => "El nombre de la ciudad no debe contener números.";
+    public static string ShipCityLettersOnly => "La ciudad solo debe contener letras y espacios.";
     public static string ShipCountryRequired => "Debe proporcionar el país de envío.";
     public static string ShipCountryMinimumLength => "Debe especificar al menos 3 caracteres del nombre del País.";
     public static string ShipCountryMaximumLength => "La longitud máxima del país es 15.";
-    public static string ShipCountryNoNumbers => "El nombre del país no debe contener números.";
+    public static string ShipCountryLettersOnly => "El país solo debe contener letras y espacios.";
     public static string ShipPostalCodeMaximumLength => "La longitud máxima del código postal es 10.";
     public static string OrderDetailsRequired => "Debe especificar los productos de la orden.";
     public static string OrderDetailsNotEmpty => "Debe especificar al menos un producto de la orden.";
