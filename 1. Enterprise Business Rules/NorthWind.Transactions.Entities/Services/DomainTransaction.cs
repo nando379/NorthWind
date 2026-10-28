@@ -6,7 +6,6 @@ internal class DomainTransaction : IDomainTransaction, IDisposable
 
     public void BeginTransaction()
     {
-        TransactionManager.ImplicitDistributedTransactions = true;
         TransactionScope = new TransactionScope(
             TransactionScopeOption.Required,
             new TransactionOptions
